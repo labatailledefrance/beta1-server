@@ -1,0 +1,38 @@
+[package]
+name = "beta1-server"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.100"
+license = "AGPL-3.0-or-later"
+description = "La Bataille de France, beta 1 : serveur de simulation qui fait autorité (Bevy sans rendu)."
+repository = "https://github.com/labatailledefrance/beta1-server"
+publish = false
+
+# Versions exactes, publiées depuis au moins deux semaines.
+[dependencies]
+beta1-common = { version = "=0.1.0", git = "https://github.com/labatailledefrance/beta1-common", tag = "v0.1.0" }
+# Bevy sans rendu : ECS, exécuteur multi-thread, MinimalPlugins (F-01).
+bevy = { version = "=0.20.1", default-features = false, features = ["std", "multi_threaded", "async_executor", "bevy_log"] }
+# WebSocket en threads bloquants, un thread par client (P-24 à P-26) ; TLS porté par l'ingress.
+tungstenite = { version = "=0.30.0", default-features = false, features = ["handshake"] }
+crossbeam-channel = "=0.5.15"
+clap = { version = "=4.6.7", features = ["derive"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+
+[profile.release]
+lto = "thin"
+codegen-units = 16
+
+# Itération : sans LTO (P-24 : 2 min 40 avec).
+[profile.rapide]
+inherits = "release"
+lto = false
+codegen-units = 64
+incremental = true

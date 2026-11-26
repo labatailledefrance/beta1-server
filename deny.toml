@@ -1,0 +1,40 @@
+# cargo deny : licences compatibles AGPL, alertes RustSec, sources autorisées.
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+# Liste commune à tous les dépôts : une licence absente ici n'est pas une erreur.
+unused-allowed-license = "allow"
+# Licences compatibles avec l'AGPL-3.0-or-later du projet.
+allow = [
+  "AGPL-3.0-or-later",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  "ISC",
+  "MIT",
+  "MIT-0",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Zlib",
+  "0BSD",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-org = { github = ["labatailledefrance"] }
