@@ -13,6 +13,6 @@ cargo run --release -- --determinism 2000 --threads 1   # hash d'état après 2 
 
 - **Déterminisme** : même hash d'état quel que soit le nombre de threads ; la CI le vérifie à 1 et 16 threads. Un calcul en tâche de fond rend son résultat à un tick fixé à son lancement.
 - **Réseau** : WebSocket sans TLS (l'ingress Traefik porte TLS et les rate limits par adresse IP) ; send queue bornée par client ; message entrant limité à 4 ko.
-- **Image** : construite sur `dhi.io/rust`, exécutée sur `dhi.io/static` (glibc), non root, publiée sur ghcr.io avec SBOM et provenance, puis signée (cosign). Le cluster refuse une image non signée.
+- **Image** : construite sur `dhi.io/rust`, exécutée sur `dhi.io/static` (glibc), non root, publiée sur ghcr.io avec SBOM et provenance, puis signée (cosign). La signature se vérifie au déploiement (`cosign verify`, voir beta1-helm).
 
 Contribution : [CONTRIBUTING.md](https://github.com/labatailledefrance/.github/blob/main/CONTRIBUTING.md). Licence : AGPL-3.0-or-later.
