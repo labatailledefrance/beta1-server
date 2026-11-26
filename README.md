@@ -5,14 +5,14 @@ Serveur de simulation de la beta 1 de **La Bataille de France** : Bevy sans rend
 ## Lancer
 
 ```
-cargo run --profile rapide -- --ecoute 127.0.0.1:7425 --threads 8
-cargo run --release -- --determinisme 2000 --threads 1   # empreinte après 2 000 ticks
+cargo run --profile rapide -- --listen 127.0.0.1:7425 --threads 8
+cargo run --release -- --determinism 2000 --threads 1   # hash d'état après 2 000 ticks
 ```
 
 ## Règles
 
-- **Déterminisme** : même empreinte quel que soit le nombre de threads ; la CI le vérifie à 1 et 16 threads. Un calcul en tâche de fond rend son résultat à un tick fixé à son lancement.
-- **Réseau** : WebSocket sans TLS (l'ingress Traefik porte TLS et les limites par adresse IP) ; file d'envoi bornée par client ; message entrant limité à 4 ko.
+- **Déterminisme** : même hash d'état quel que soit le nombre de threads ; la CI le vérifie à 1 et 16 threads. Un calcul en tâche de fond rend son résultat à un tick fixé à son lancement.
+- **Réseau** : WebSocket sans TLS (l'ingress Traefik porte TLS et les rate limits par adresse IP) ; send queue bornée par client ; message entrant limité à 4 ko.
 - **Image** : construite sur `dhi.io/rust`, exécutée sur `dhi.io/static` (glibc), non root, publiée sur ghcr.io avec SBOM et provenance, puis signée (cosign). Le cluster refuse une image non signée.
 
 Contribution : [CONTRIBUTING.md](https://github.com/labatailledefrance/.github/blob/main/CONTRIBUTING.md). Licence : AGPL-3.0-or-later.

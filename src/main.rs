@@ -5,33 +5,33 @@ use std::sync::Arc;
 
 use clap::Parser;
 
-use beta1_server::reseau::{self, Partage};
+use beta1_server::network::{self, Shared};
 use beta1_server::simulation;
 
 #[derive(Parser)]
 #[command(version, about = "Serveur de simulation de La Bataille de France (beta 1)")]
-struct Options {
+struct Args {
     /// Adresse d'écoute du WebSocket.
     #[arg(long, default_value = "0.0.0.0:7425")]
-    ecoute: String,
+    listen: String,
     /// Threads de la simulation.
     #[arg(long, default_value_t = 16)]
     threads: usize,
-    /// Test de déterminisme : exécute N ticks sans attente, affiche l'empreinte et sort.
+    /// Test de déterminisme : exécute N ticks sans attente, affiche le hash d'état et sort.
     #[arg(long, value_name = "TICKS")]
-    determinisme: Option<u64>,
+    determinism: Option<u64>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let o = Options::parse();
-    if let Some(n) = o.determinisme {
-        println!("{:016x}", simulation::empreinte_apres(n, o.threads));
+    let args = Args::parse();
+    if let Some(n) = args.determinism {
+        println!("{:016x}", simulation::state_hash_after(n, args.threads));
         return Ok(());
     }
-    let partage = Arc::new(Partage::default());
-    reseau::demarrer(TcpListener::bind(&o.ecoute)?, partage.clone());
-    let mut app = simulation::app(o.threads, true);
-    simulation::brancher_reseau(&mut app, partage);
+    let shared = Arc::new(Shared::default());
+    network::listen(TcpListener::bind(&args.listen)?, shared.clone());
+    let mut app = simulation::app(args.threads, true);
+    simulation::attach_network(&mut app, shared);
     app.run();
     Ok(())
 }

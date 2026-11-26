@@ -10,31 +10,31 @@ permissions: {}
 
 jobs:
   rust:
-    uses: labatailledefrance/.github/.github/workflows/rust.yml@25c52e1c0a35f899fbafabc87e35e0ca8c6cda02 # v1.3.0
+    uses: labatailledefrance/.github/.github/workflows/rust.yml@2a2b9d8e0fd4a253d281d83127b4f4f67c20880d # v2.0.0
     with:
-      # Même empreinte à 1 et à 16 threads (A-12).
-      determinisme: |
+      # Même hash d'état à 1 et à 16 threads (A-12).
+      determinism: |
         cargo build --release --locked
-        a=$(target/release/beta1-server --determinisme 2000 --threads 1)
-        b=$(target/release/beta1-server --determinisme 2000 --threads 16)
+        a=$(target/release/beta1-server --determinism 2000 --threads 1)
+        b=$(target/release/beta1-server --determinism 2000 --threads 16)
         echo "1 thread : $a ; 16 threads : $b"
         test "$a" = "$b"
     permissions:
       contents: read
   securite:
-    uses: labatailledefrance/.github/.github/workflows/securite.yml@25c52e1c0a35f899fbafabc87e35e0ca8c6cda02 # v1.3.0
+    uses: labatailledefrance/.github/.github/workflows/securite.yml@2a2b9d8e0fd4a253d281d83127b4f4f67c20880d # v2.0.0
     permissions:
       contents: read
   codeql:
     if: github.event.repository.visibility == 'public'
-    uses: labatailledefrance/.github/.github/workflows/codeql.yml@25c52e1c0a35f899fbafabc87e35e0ca8c6cda02 # v1.3.0
+    uses: labatailledefrance/.github/.github/workflows/codeql.yml@2a2b9d8e0fd4a253d281d83127b4f4f67c20880d # v2.0.0
     permissions:
       contents: read
       actions: read
       security-events: write
   dco:
     if: github.event_name == 'pull_request'
-    uses: labatailledefrance/.github/.github/workflows/dco.yml@25c52e1c0a35f899fbafabc87e35e0ca8c6cda02 # v1.3.0
+    uses: labatailledefrance/.github/.github/workflows/dco.yml@2a2b9d8e0fd4a253d281d83127b4f4f67c20880d # v2.0.0
     permissions:
       contents: read
   # Image : seulement après fusion ou sur un tag (les PR de forks n'ont pas les
@@ -42,9 +42,9 @@ jobs:
   image:
     if: github.event_name == 'push' && vars.DHI_PRET == 'oui'
     needs: [rust, securite]
-    uses: labatailledefrance/.github/.github/workflows/image.yml@25c52e1c0a35f899fbafabc87e35e0ca8c6cda02 # v1.3.0
+    uses: labatailledefrance/.github/.github/workflows/image.yml@2a2b9d8e0fd4a253d281d83127b4f4f67c20880d # v2.0.0
     with:
-      nom: beta1-server
+      name: beta1-server
     secrets:
       DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
       DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
