@@ -38,9 +38,9 @@ jobs:
     permissions:
       contents: read
   # Image : seulement après fusion ou sur un tag (les PR de forks n'ont pas les
-  # secrets de dhi.io), et une fois les secrets posés (variable DHI_PRET).
+  # secrets de dhi.io).
   image:
-    if: github.event_name == 'push' && vars.DHI_PRET == 'oui'
+    if: github.event_name == 'push'
     needs: [rust, securite]
     uses: labatailledefrance/.github/.github/workflows/image.yml@2a2b9d8e0fd4a253d281d83127b4f4f67c20880d # v2.0.0
     with:
