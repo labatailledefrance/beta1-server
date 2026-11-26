@@ -11,5 +11,7 @@ RUN --mount=type=cache,target=/root/.cargo/registry \
 
 FROM dhi.io/static:20250419-glibc-debian13@sha256:133e7708dab3dc8c84080758eb1b99ef63795ff39a8588d038db4d3c2abacfba
 COPY --from=construction /beta1-server /beta1-server
+# Utilisateur « nonroot » de l'image de base, explicite.
+USER 65532:65532
 EXPOSE 7425
 ENTRYPOINT ["/beta1-server"]

@@ -10,7 +10,7 @@ permissions: {}
 
 jobs:
   rust:
-    uses: labatailledefrance/.github/.github/workflows/rust.yml@2320615409206c7b75541994a99e4154e8fccd39 # v1.1.0
+    uses: labatailledefrance/.github/.github/workflows/rust.yml@3fad76826811d9445c4866a9c2216e9c5d2dc3ee # v1.2.0
     with:
       # Même empreinte à 1 et à 16 threads (A-12).
       determinisme: |
@@ -22,19 +22,19 @@ jobs:
     permissions:
       contents: read
   securite:
-    uses: labatailledefrance/.github/.github/workflows/securite.yml@2320615409206c7b75541994a99e4154e8fccd39 # v1.1.0
+    uses: labatailledefrance/.github/.github/workflows/securite.yml@3fad76826811d9445c4866a9c2216e9c5d2dc3ee # v1.2.0
     permissions:
       contents: read
   codeql:
     if: github.event.repository.visibility == 'public'
-    uses: labatailledefrance/.github/.github/workflows/codeql.yml@2320615409206c7b75541994a99e4154e8fccd39 # v1.1.0
+    uses: labatailledefrance/.github/.github/workflows/codeql.yml@3fad76826811d9445c4866a9c2216e9c5d2dc3ee # v1.2.0
     permissions:
       contents: read
       actions: read
       security-events: write
   dco:
     if: github.event_name == 'pull_request'
-    uses: labatailledefrance/.github/.github/workflows/dco.yml@2320615409206c7b75541994a99e4154e8fccd39 # v1.1.0
+    uses: labatailledefrance/.github/.github/workflows/dco.yml@3fad76826811d9445c4866a9c2216e9c5d2dc3ee # v1.2.0
     permissions:
       contents: read
   # Image : seulement après fusion ou sur un tag (les PR de forks n'ont pas les
@@ -42,7 +42,7 @@ jobs:
   image:
     if: github.event_name == 'push' && vars.DHI_PRET == 'oui'
     needs: [rust, securite]
-    uses: labatailledefrance/.github/.github/workflows/image.yml@2320615409206c7b75541994a99e4154e8fccd39 # v1.1.0
+    uses: labatailledefrance/.github/.github/workflows/image.yml@3fad76826811d9445c4866a9c2216e9c5d2dc3ee # v1.2.0
     with:
       nom: beta1-server
     secrets:
