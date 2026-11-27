@@ -99,14 +99,16 @@ fn avancer(mut tick: ResMut<Tick>) {
 pub fn verifier(app: &mut App) -> Result<(), String> {
     preparer(app);
     let world = app.world_mut();
+    let labels: Vec<_> = world.resource::<Schedules>().iter().map(|(_, s)| s.label()).collect();
     let mut erreurs = Vec::new();
-    world.resource_scope(|world, mut schedules: Mut<Schedules>| {
-        for (label, schedule) in schedules.iter_mut() {
+    for label in labels {
+        // Un schedule à la fois : `initialize` a besoin de la ressource `Schedules`.
+        world.schedule_scope(label, |world, schedule| {
             if let Err(e) = schedule.initialize(world) {
                 erreurs.push(format!("{label:?} : {}", e.to_string(schedule.graph(), world)));
             }
-        }
-    });
+        });
+    }
     if erreurs.is_empty() { Ok(()) } else { Err(erreurs.join("\n")) }
 }
 
