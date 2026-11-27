@@ -12,9 +12,11 @@ jobs:
   rust:
     uses: labatailledefrance/.github/.github/workflows/rust.yml@2a2b9d8e0fd4a253d281d83127b4f4f67c20880d # v2.0.0
     with:
-      # Même hash d'état à 1 et à 16 threads (A-12).
+      # Catalogue valide et ordre des systèmes sans ambiguïté (E-02, F-01), puis
+      # même hash d'état à 1 et à 16 threads (A-12).
       determinism: |
         cargo build --release --locked
+        target/release/beta1-server --check
         a=$(target/release/beta1-server --determinism 2000 --threads 1)
         b=$(target/release/beta1-server --determinism 2000 --threads 16)
         echo "1 thread : $a ; 16 threads : $b"

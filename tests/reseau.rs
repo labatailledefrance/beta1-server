@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tungstenite::{Message, connect};
 
 use beta1_common::protocol::{ClientMessage, FINGERPRINT, RejectReason, ServerMessage};
-use beta1_server::network::{Shared, listen};
+use beta1_server::reseau::{Shared, listen};
 
 type Ws = tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>;
 

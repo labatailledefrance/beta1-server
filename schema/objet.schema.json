@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Objet",
+  "description": "Un objet du catalogue : une table, nommée par son genre.",
+  "oneOf": [
+    {
+      "description": "Type de zombie : déplacement, perception, alerte, contagion (ZOMBIES.md).",
+      "type": "object",
+      "properties": {
+        "zombie": {
+          "$ref": "#/$defs/Zombie"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "zombie"
+      ]
+    }
+  ],
+  "$defs": {
+    "Zombie": {
+      "description": "Paramètres d'un type de zombie. Valeurs de départ : celles de P-26.",
+      "type": "object",
+      "properties": {
+        "cone_vision": {
+          "description": "Cône de vision en errance (degrés) ; en chasse, il voit tout autour.",
+          "type": "number",
+          "format": "double",
+          "maximum": 360.0,
+          "minimum": 0.0
+        },
+        "delai_zombification": {
+          "description": "Délai de zombification d'un humain mordu (s).",
+          "type": "number",
+          "format": "double",
+          "maximum": 3600.0,
+          "minimum": 0.05
+        },
+        "duree_attirance": {
+          "description": "Durée d'attirance par un bruit ou une fumée (s).",
+          "type": "number",
+          "format": "double",
+          "maximum": 3600.0,
+          "minimum": 0.05
+        },
+        "ecart_vitesse": {
+          "description": "Écart de vitesse d'un zombie à l'autre, en fraction (0,18 : de -18 % à +18 %).",
+          "type": "number",
+          "format": "double",
+          "maximum": 0.5,
+          "minimum": 0.0
+        },
+        "facteur_eau": {
+          "description": "Facteur de vitesse dans l'eau peu profonde.",
+          "type": "number",
+          "format": "double",
+          "maximum": 1.0,
+          "minimum": 0.05
+        },
+        "fraicheur_alerte": {
+          "description": "Âge maximal d'une alerte encore relayée (s).",
+          "type": "number",
+          "format": "double",
+          "maximum": 600.0,
+          "minimum": 0.05
+        },
+        "memoire_proie": {
+          "description": "Durée pendant laquelle il poursuit une proie perdue de vue (s).",
+          "type": "number",
+          "format": "double",
+          "maximum": 3600.0,
+          "minimum": 0.05
+        },
+        "perception_chasse": {
+          "description": "Période de perception en chasse (s).",
+          "type": "number",
+          "format": "double",
+          "maximum": 60.0,
+          "minimum": 0.05
+        },
+        "perception_errance": {
+          "description": "Période de perception en errance (s).",
+          "type": "number",
+          "format": "double",
+          "maximum": 60.0,
+          "minimum": 0.05
+        },
+        "periode_cap": {
+          "description": "Période de changement de cap en errance (s).",
+          "type": "number",
+          "format": "double",
+          "maximum": 600.0,
+          "minimum": 0.05
+        },
+        "rayon_contact": {
+          "description": "Distance de contact, de morsure (m).",
+          "type": "number",
+          "format": "double",
+          "maximum": 5.0,
+          "minimum": 0.1
+        },
+        "rayon_fumee": {
+          "description": "Distance sous laquelle une fumée l'attire (m).",
+          "type": "number",
+          "format": "double",
+          "maximum": 20000.0,
+          "minimum": 0.0
+        },
+        "rayon_odorat": {
+          "description": "Distance sous laquelle il sent une proie hors de son cône (m).",
+          "type": "number",
+          "format": "double",
+          "maximum": 100.0,
+          "minimum": 0.0
+        },
+        "rayon_relais": {
+          "description": "Rayon de relais de l'alerte, de zombie à zombie (m).",
+          "type": "number",
+          "format": "double",
+          "maximum": 50.0,
+          "minimum": 0.0
+        },
+        "vitesse_course": {
+          "description": "Vitesse de course, en chasse (m/s).",
+          "type": "number",
+          "format": "double",
+          "maximum": 15.0,
+          "minimum": 0.05
+        },
+        "vitesse_errance": {
+          "description": "Vitesse en errance (m/s).",
+          "type": "number",
+          "format": "double",
+          "maximum": 5.0,
+          "minimum": 0.05
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "vitesse_errance",
+        "vitesse_course",
+        "ecart_vitesse",
+        "facteur_eau",
+        "periode_cap",
+        "cone_vision",
+        "rayon_odorat",
+        "perception_errance",
+        "perception_chasse",
+        "memoire_proie",
+        "rayon_relais",
+        "fraicheur_alerte",
+        "rayon_fumee",
+        "duree_attirance",
+        "rayon_contact",
+        "delai_zombification"
+      ]
+    }
+  }
+}
