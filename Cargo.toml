@@ -10,7 +10,7 @@ publish = false
 
 # Versions exactes, publiées depuis au moins deux semaines.
 [dependencies]
-beta1-common = { version = "=0.2.0", git = "https://github.com/labatailledefrance/beta1-common", tag = "v0.2.0" }
+beta1-common = { version = "=0.4.0", git = "https://github.com/labatailledefrance/beta1-common", tag = "v0.4.0" }
 # Bevy sans rendu : ECS, exécuteur multi-thread, MinimalPlugins (F-01) ; « debug » nomme
 # les systèmes dans les erreurs d'ambiguïté.
 bevy = { version = "=0.20.1", default-features = false, features = ["std", "multi_threaded", "async_executor", "bevy_log", "debug"] }
