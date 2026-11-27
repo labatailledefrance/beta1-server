@@ -1,0 +1,20 @@
+#:schema ../../../schema/objet.schema.json
+# Zombie ordinaire (documentation/game-elements/zombies/ZOMBIES.md).
+# Valeurs de départ : celles de P-26, à régler en jeu.
+[zombie]
+vitesse_errance = 0.5
+vitesse_course = 3.0
+ecart_vitesse = 0.18
+facteur_eau = 0.4
+periode_cap = 4.0
+cone_vision = 120.0
+rayon_odorat = 10.0
+perception_errance = 1.0
+perception_chasse = 0.25
+memoire_proie = 60.0
+rayon_relais = 2.5
+fraicheur_alerte = 3.0
+rayon_fumee = 2500.0
+duree_attirance = 30.0
+rayon_contact = 1.0
+delai_zombification = 10.0

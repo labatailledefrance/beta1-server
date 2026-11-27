@@ -9,11 +9,15 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::thread;
 
+use bevy::prelude::*;
+
 use crossbeam_channel::{Receiver, Sender, TrySendError, bounded};
 use tungstenite::protocol::WebSocketConfig;
 use tungstenite::{Message, accept_with_config};
 
 use beta1_common::protocol::{MAX_CLIENT_MESSAGE, ServerMessage, handshake};
+
+use crate::app::{Phase, Tick};
 
 /// Profondeur de la send queue d'un client, en messages.
 pub const QUEUE_DEPTH: usize = 16;
@@ -54,7 +58,7 @@ pub fn listen(listener: TcpListener, shared: Arc<Shared>) {
             let s = shared.clone();
             thread::spawn(move || {
                 if let Err(e) = serve(stream, &s) {
-                    bevy::log::debug!("client : {e}");
+                    debug!("client : {e}");
                 }
             });
         }
@@ -81,4 +85,24 @@ fn serve(stream: TcpStream, shared: &Shared) -> Result<(), Box<dyn std::error::E
         ws.send(Message::Binary(m.as_ref().clone().into()))?;
     }
     Ok(())
+}
+
+/// Plugin réseau : en phase Sortie, publie le tick courant et broadcast l'état.
+pub struct ReseauPlugin(pub Arc<Shared>);
+
+impl Plugin for ReseauPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(SharedRes(self.0.clone())).add_systems(FixedUpdate, broadcast_state.in_set(Phase::Sortie));
+    }
+}
+
+#[derive(Resource)]
+struct SharedRes(Arc<Shared>);
+
+fn broadcast_state(tick: Res<Tick>, shared: Res<SharedRes>) {
+    shared.0.publish_tick(tick.0);
+    // État à 10 Hz.
+    if tick.0.is_multiple_of(2) {
+        shared.0.broadcast(ServerMessage::State { tick: tick.0 }.encode());
+    }
 }

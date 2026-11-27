@@ -1,7 +1,14 @@
 //! La Bataille de France, beta 1 : serveur de simulation.
 //!
-//! - [`simulation`] : l'`App` Bevy sans rendu, cadencée à 20 Hz ;
-//! - [`network`] : WebSocket, handshake, send queue bornée par client.
+//! Un plugin Bevy par domaine (F-01) : il possède ses composants et ses
+//! messages, lit ceux des autres et n'écrit que les siens.
+//!
+//! - [`app`] : l'`App` sans rendu à 20 Hz et les phases d'un tick ;
+//! - [`catalogue`] : mods, objets TOML, textes Fluent, validation, compilation (E-02, F-03) ;
+//! - [`determinisme`] : hash d'état ;
+//! - [`reseau`] : WebSocket, handshake, send queue bornée par client.
 
-pub mod network;
-pub mod simulation;
+pub mod app;
+pub mod catalogue;
+pub mod determinisme;
+pub mod reseau;

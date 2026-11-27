@@ -11,6 +11,9 @@ RUN --mount=type=cache,target=/root/.cargo/registry \
 
 FROM dhi.io/static:20250419-glibc-debian13@sha256:133e7708dab3dc8c84080758eb1b99ef63795ff39a8588d038db4d3c2abacfba
 COPY --from=construction /beta1-server /beta1-server
+# Contenu de base : le mod « base » (F-03) ; les mods d'un opérateur arrivent par une PVC.
+COPY mods /mods
+ENV MODS=/mods
 # Utilisateur « nonroot » de l'image de base, explicite.
 USER 65532:65532
 EXPOSE 7425

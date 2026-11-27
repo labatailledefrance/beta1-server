@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Manifeste",
+  "description": "Contenu de `mod.toml`.",
+  "type": "object",
+  "properties": {
+    "dependances": {
+      "description": "Identifiants des mods à charger avant celui-ci.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "id": {
+      "description": "Identifiant du mod : nom de son dossier, en minuscules ASCII et tirets.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Version, sous la forme `x.y.z`.",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version"
+  ]
+}

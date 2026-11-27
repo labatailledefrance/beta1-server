@@ -1,0 +1,5 @@
+#:schema ../../schema/mod.schema.json
+# Contenu de base de La Bataille de France : un mod comme les autres (F-03).
+id = "base"
+version = "0.1.0"
+dependances = []
