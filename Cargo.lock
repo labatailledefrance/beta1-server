@@ -293,6 +293,7 @@ dependencies = [
  "clap",
  "crossbeam-channel",
  "fluent-syntax",
+ "ruzstd",
  "schemars",
  "serde",
  "serde_json",

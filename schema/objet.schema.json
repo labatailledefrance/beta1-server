@@ -15,9 +15,75 @@
       "required": [
         "zombie"
       ]
+    },
+    {
+      "description": "Scénario : état initial du monde (G-06).",
+      "type": "object",
+      "properties": {
+        "scenario": {
+          "$ref": "#/$defs/Scenario"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "scenario"
+      ]
     }
   ],
   "$defs": {
+    "Rectangle": {
+      "description": "Rectangle de tiles, bornes comprises, en kilomètres dans la projection de sa zone.",
+      "type": "object",
+      "properties": {
+        "x": {
+          "description": "Colonnes [min, max] (km vers l'est).",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "y": {
+          "description": "Lignes [min, max] (km vers le nord).",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "zone": {
+          "description": "Zone de projection.",
+          "$ref": "#/$defs/ZoneProjection"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "zone",
+        "x",
+        "y"
+      ]
+    },
+    "Scenario": {
+      "description": "Scénario : ce qui existe au démarrage du monde.",
+      "type": "object",
+      "properties": {
+        "tiles_actives": {
+          "description": "Tiles actives au démarrage, en attendant que les unités les activent.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rectangle"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "tiles_actives"
+      ]
+    },
     "Zombie": {
       "description": "Paramètres d'un type de zombie. Valeurs de départ : celles de P-26.",
       "type": "object",
@@ -153,6 +219,41 @@
         "duree_attirance",
         "rayon_contact",
         "delai_zombification"
+      ]
+    },
+    "ZoneProjection": {
+      "description": "Zone de projection d'une tile (C-01), dans l'ordre de `beta1_common::geo::ZONES`.",
+      "oneOf": [
+        {
+          "description": "Lambert-93 : métropole.",
+          "type": "string",
+          "const": "LAMB93"
+        },
+        {
+          "description": "UTM 20N : Guadeloupe, Martinique.",
+          "type": "string",
+          "const": "UTM20"
+        },
+        {
+          "description": "UTM 22N : Guyane.",
+          "type": "string",
+          "const": "UTM22"
+        },
+        {
+          "description": "UTM 40S : La Réunion.",
+          "type": "string",
+          "const": "UTM40S"
+        },
+        {
+          "description": "UTM 38S : Mayotte.",
+          "type": "string",
+          "const": "UTM38S"
+        },
+        {
+          "description": "UTM 21N : Saint-Pierre-et-Miquelon.",
+          "type": "string",
+          "const": "UTM21"
+        }
       ]
     }
   }

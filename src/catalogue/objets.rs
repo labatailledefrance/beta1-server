@@ -23,6 +23,8 @@ use serde::Deserialize;
 pub enum Objet {
     /// Type de zombie : déplacement, perception, alerte, contagion (ZOMBIES.md).
     Zombie(Zombie),
+    /// Scénario : état initial du monde (G-06).
+    Scenario(Scenario),
 }
 
 impl Objet {
@@ -30,6 +32,7 @@ impl Objet {
     pub fn genre(&self) -> &'static str {
         match self {
             Objet::Zombie(_) => "zombie",
+            Objet::Scenario(_) => "scenario",
         }
     }
 
@@ -37,6 +40,7 @@ impl Objet {
     pub fn verifier(&self, erreurs: &mut Vec<String>) {
         match self {
             Objet::Zombie(z) => z.verifier(erreurs),
+            Objet::Scenario(s) => s.verifier(erreurs),
         }
     }
 }
@@ -109,5 +113,105 @@ parametres! {
         rayon_contact: [0.1, 5.0],
         /// Délai de zombification d'un humain mordu (s).
         delai_zombification: [0.05, 3600.0],
+    }
+}
+
+/// Zone de projection d'une tile (C-01), dans l'ordre de `beta1_common::geo::ZONES`.
+#[derive(Deserialize, JsonSchema, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ZoneProjection {
+    /// Lambert-93 : métropole.
+    #[serde(rename = "LAMB93")]
+    Lamb93,
+    /// UTM 20N : Guadeloupe, Martinique.
+    #[serde(rename = "UTM20")]
+    Utm20,
+    /// UTM 22N : Guyane.
+    #[serde(rename = "UTM22")]
+    Utm22,
+    /// UTM 40S : La Réunion.
+    #[serde(rename = "UTM40S")]
+    Utm40s,
+    /// UTM 38S : Mayotte.
+    #[serde(rename = "UTM38S")]
+    Utm38s,
+    /// UTM 21N : Saint-Pierre-et-Miquelon.
+    #[serde(rename = "UTM21")]
+    Utm21,
+}
+
+impl ZoneProjection {
+    /// Indice de la zone dans `beta1_common::geo::ZONES`.
+    pub fn indice(self) -> u8 {
+        self as u8
+    }
+}
+
+/// Rectangle de tiles, bornes comprises, en kilomètres dans la projection de sa zone.
+#[derive(Deserialize, JsonSchema, Debug, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct Rectangle {
+    /// Zone de projection.
+    pub zone: ZoneProjection,
+    /// Colonnes [min, max] (km vers l'est).
+    pub x: [i32; 2],
+    /// Lignes [min, max] (km vers le nord).
+    pub y: [i32; 2],
+}
+
+/// Plus de tiles actives au démarrage que cela : sans doute une faute de frappe.
+pub const MAX_TILES_ACTIVES: i64 = 10_000;
+
+/// Scénario : ce qui existe au démarrage du monde.
+#[derive(Deserialize, JsonSchema, Debug, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct Scenario {
+    /// Tiles actives au démarrage, en attendant que les unités les activent.
+    pub tiles_actives: Vec<Rectangle>,
+}
+
+impl Scenario {
+    fn verifier(&self, erreurs: &mut Vec<String>) {
+        let mut total = 0i64;
+        for (k, r) in self.tiles_actives.iter().enumerate() {
+            let cote = beta1_common::geo::ZONE_STRIDE;
+            if r.x[0] > r.x[1] || r.y[0] > r.y[1] {
+                erreurs.push(format!("tiles_actives[{k}] : bornes inversées"));
+                continue;
+            }
+            if r.x[0] < 0 || r.x[1] >= cote {
+                erreurs.push(format!("tiles_actives[{k}] : x hors de [0, {}]", cote - 1));
+            }
+            if r.y[0] < -20_000 || r.y[1] > 20_000 {
+                erreurs.push(format!("tiles_actives[{k}] : y hors de [-20000, 20000]"));
+            }
+            total += (r.x[1] - r.x[0] + 1) as i64 * (r.y[1] - r.y[0] + 1) as i64;
+        }
+        if total > MAX_TILES_ACTIVES {
+            erreurs.push(format!("tiles_actives : {total} tiles, plus de {MAX_TILES_ACTIVES}"));
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn zones_dans_l_ordre_de_common() {
+        let zones = [
+            ZoneProjection::Lamb93,
+            ZoneProjection::Utm20,
+            ZoneProjection::Utm22,
+            ZoneProjection::Utm40s,
+            ZoneProjection::Utm38s,
+            ZoneProjection::Utm21,
+        ];
+        assert_eq!(zones.len(), beta1_common::geo::ZONES.len());
+        for z in zones {
+            let texte =
+                format!("zone = \"{}\"\nx = [0, 0]\ny = [0, 0]\n", beta1_common::geo::ZONES[z.indice() as usize]);
+            let r: Rectangle = toml::from_str(&texte).unwrap_or_else(|e| panic!("{e}"));
+            assert_eq!(r.zone, z);
+        }
     }
 }

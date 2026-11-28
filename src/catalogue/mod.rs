@@ -27,6 +27,7 @@ use bevy::prelude::*;
 use fluent_syntax::ast::Entry;
 
 use beta1_common::codec::Writer;
+use beta1_common::geo::TileId;
 use beta1_common::protocol::TICKS_PER_SECOND;
 
 use objets::Objet;
@@ -128,6 +129,15 @@ pub struct TypeZombie {
     pub delai_zombification: u32,
 }
 
+/// Scénario compilé.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Scenario {
+    /// Identifiant.
+    pub id: String,
+    /// Tiles actives au démarrage, triées, sans doublon.
+    pub tiles_actives: Vec<TileId>,
+}
+
 /// Fichier de textes Fluent d'un mod, tel quel (le client le donne à un
 /// `FluentBundle`, dans l'ordre des mods).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -147,6 +157,8 @@ pub struct Catalogue {
     pub mods: Vec<(String, String)>,
     /// Types de zombies, triés par identifiant ; l'indice est un [`IdZombie`].
     pub zombies: Vec<TypeZombie>,
+    /// Scénarios, triés par identifiant.
+    pub scenarios: Vec<Scenario>,
     /// Textes, dans l'ordre des mods.
     pub textes: Vec<Textes>,
     hash: [u8; 32],
@@ -161,6 +173,11 @@ impl Catalogue {
     /// Type de zombie.
     pub fn zombie(&self, id: IdZombie) -> &TypeZombie {
         &self.zombies[id.0 as usize]
+    }
+
+    /// Scénario par identifiant.
+    pub fn scenario(&self, id: &str) -> Option<&Scenario> {
+        self.scenarios.iter().find(|s| s.id == id)
     }
 
     /// Hash BLAKE3 de l'encodage binaire : il change dès qu'un mod, un objet ou un texte change.
@@ -203,6 +220,14 @@ impl Catalogue {
             w.u32(z.duree_attirance);
             w.f32(z.rayon_contact);
             w.u32(z.delai_zombification);
+        }
+        w.varint(self.scenarios.len() as u64);
+        for s in &self.scenarios {
+            w.string(&s.id);
+            w.varint(s.tiles_actives.len() as u64);
+            for t in &s.tiles_actives {
+                w.tile(*t);
+            }
         }
         w.varint(self.textes.len() as u64);
         for t in &self.textes {
@@ -300,6 +325,7 @@ pub fn charger(racine: &Path, liste: &[String]) -> Result<Catalogue, Erreurs> {
         }
     }
     let mut zombies = Vec::new();
+    let mut scenarios = Vec::new();
     for ((_, id), lu) in &objets {
         match &lu.objet {
             Objet::Zombie(z) => match compiler_zombie(id, z) {
@@ -310,6 +336,7 @@ pub fn charger(racine: &Path, liste: &[String]) -> Result<Catalogue, Erreurs> {
                     }
                 }
             },
+            Objet::Scenario(s) => scenarios.push(compiler_scenario(id, s)),
         }
     }
     if zombies.len() > u16::MAX as usize {
@@ -321,6 +348,7 @@ pub fn charger(racine: &Path, liste: &[String]) -> Result<Catalogue, Erreurs> {
     let mut c = Catalogue {
         mods: ordre.iter().map(|m| (m.manifeste.id.clone(), m.manifeste.version.clone())).collect(),
         zombies,
+        scenarios,
         textes,
         hash: [0; 32],
     };
@@ -412,6 +440,21 @@ fn compiler_zombie(id: &str, z: &objets::Zombie) -> Result<TypeZombie, Vec<Strin
         e.push("vitesse_course inférieure à vitesse_errance".to_owned());
     }
     if e.is_empty() { Ok(t) } else { Err(e) }
+}
+
+fn compiler_scenario(id: &str, s: &objets::Scenario) -> Scenario {
+    let mut tiles = std::collections::BTreeSet::new();
+    for r in &s.tiles_actives {
+        for x in r.x[0]..=r.x[1] {
+            for y in r.y[0]..=r.y[1] {
+                // Bornes déjà vérifiées : la zone et x sont valides.
+                if let Some(t) = TileId::from_zone(r.zone.indice(), x, y) {
+                    tiles.insert(t);
+                }
+            }
+        }
+    }
+    Scenario { id: id.to_owned(), tiles_actives: tiles.into_iter().collect() }
 }
 
 /// JSON Schemas des fichiers de mods, versionnés dans `schema/` (E-02) : (nom du fichier, contenu).

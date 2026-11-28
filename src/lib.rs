@@ -5,6 +5,7 @@
 //!
 //! - [`app`] : l'`App` sans rendu à 20 Hz et les phases d'un tick ;
 //! - [`catalogue`] : mods, objets TOML, textes Fluent, validation, compilation (E-02, F-03) ;
+//! - [`tiles`] : publication de tiles, terrain, activation à tick fixé ;
 //! - [`determinisme`] : hash d'état ;
 //! - [`reseau`] : WebSocket, handshake, send queue bornée par client.
 
@@ -12,3 +13,4 @@ pub mod app;
 pub mod catalogue;
 pub mod determinisme;
 pub mod reseau;
+pub mod tiles;
