@@ -103,7 +103,7 @@ fn lancer(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     eprintln!("catalogue {hash} ; scénario « {} » : {initiales} tiles actives au démarrage", args.scenario);
-    let shared = Arc::new(Shared::default());
+    let shared = Arc::new(Shared::new(monde.camera()));
     reseau::listen(TcpListener::bind(&args.listen)?, shared.clone());
     let mut app = app::app(monde, args.threads, true);
     app.add_plugins(ReseauPlugin(shared));

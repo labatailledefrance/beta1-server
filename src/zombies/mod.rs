@@ -114,6 +114,15 @@ fn peupler(
             None => (0, 0, IdZombie(0)),
         };
         let places = placement::poser(&tile.terrain, n, hash3(graine, t.ix as u32 as u64, t.iy as u32 as u64));
+        if n > 0 {
+            info!(
+                "tile ({}, {}) : {} zombies placés, {} sans place",
+                t.ix,
+                t.iy,
+                places.zombies.len(),
+                places.sans_place
+            );
+        }
         let liste = places
             .zombies
             .into_iter()
