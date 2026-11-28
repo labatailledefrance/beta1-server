@@ -276,8 +276,8 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "beta1-common"
-version = "0.4.0"
-source = "git+https://github.com/labatailledefrance/beta1-common?tag=v0.4.0#a86662336de5157384f441cf02b5261d7f42279e"
+version = "0.5.0"
+source = "git+https://github.com/labatailledefrance/beta1-common?tag=v0.5.0#e8775b17891daa5ef785c01c518015a7124354d3"
 dependencies = [
  "blake3",
  "ruzstd",

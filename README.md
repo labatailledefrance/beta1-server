@@ -74,7 +74,7 @@ Genres d'objets : `zombie` (déplacement, perception, alerte, contagion ; valeur
 ## Règles
 
 - **Déterminisme** : même hash d'état quel que soit le nombre de threads ; la CI le vérifie à 1 et 16 threads. Un calcul en tâche de fond rend son résultat à un tick fixé à son lancement.
-- **Réseau** : WebSocket sans TLS (l'ingress Traefik porte TLS et les rate limits par adresse IP) ; send queue bornée par client ; message entrant limité à 4 ko.
+- **Réseau** : WebSocket sans TLS (l'ingress Traefik porte TLS et les rate limits par adresse IP) ; send queue bornée par client ; message entrant limité à 4 ko. Le `Welcome` donne la caméra de départ (milieu des tiles du scénario). Le client envoie sa vue (centre, rayon ≤ 1 km) ; à 10 Hz, la simulation publie l'état et un instantané partagé des zombies, et le thread de chaque client en tire les zombies de sa vue, les plus proches d'abord, 1 200 au plus (60 ko/s). Un message invalide après le handshake coupe la connexion.
 - **Image** : construite sur `dhi.io/rust`, exécutée sur `dhi.io/static` (glibc), non root, avec le mod `base` dans `/mods` ; publiée sur ghcr.io avec SBOM et provenance, puis signée (cosign). La signature se vérifie au déploiement (`cosign verify`, voir beta1-helm).
 
 Contribution : [CONTRIBUTING.md](https://github.com/labatailledefrance/.github/blob/main/CONTRIBUTING.md). Licence : AGPL-3.0-or-later.

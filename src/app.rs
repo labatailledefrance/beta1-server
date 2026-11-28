@@ -20,6 +20,7 @@ use bevy::app::ScheduleRunnerPlugin;
 use bevy::ecs::schedule::{LogLevel, ScheduleBuildSettings, ScheduleLabel};
 use bevy::prelude::*;
 
+use beta1_common::geo::{Pos, TileId};
 use beta1_common::protocol::TICKS_PER_SECOND;
 
 use crate::catalogue::{Catalogue, CataloguePlugin, Scenario};
@@ -89,6 +90,15 @@ impl Monde {
         })?;
         let scenario = Some(s.clone());
         Ok(Monde { catalogue, publication, scenario })
+    }
+
+    /// Caméra de départ des clients : la tile au milieu des tiles actives du scénario.
+    pub fn camera(&self) -> Pos {
+        let tiles = self.scenario.as_ref().map(|s| s.tiles_actives.as_slice()).unwrap_or_default();
+        let n = tiles.len().max(1) as i64;
+        let ix = tiles.iter().map(|t| t.ix as i64).sum::<i64>() / n;
+        let iy = tiles.iter().map(|t| t.iy as i64).sum::<i64>() / n;
+        Pos { tile: TileId { ix: ix as i32, iy: iy as i32 }, local: [0.0, 0.0] }
     }
 }
 
