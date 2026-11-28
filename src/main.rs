@@ -106,7 +106,8 @@ fn lancer(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     let shared = Arc::new(Shared::new(monde.camera()));
     reseau::listen(TcpListener::bind(&args.listen)?, shared.clone());
     let mut app = app::app(monde, args.threads, true);
-    app.add_plugins(ReseauPlugin(shared));
+    // Journaux (info!, error!) : MinimalPlugins n'a pas le LogPlugin.
+    app.add_plugins((bevy::log::LogPlugin::default(), ReseauPlugin(shared)));
     app::verifier(&mut app)?;
     app.run();
     Ok(())
