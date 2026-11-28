@@ -13,6 +13,7 @@ use beta1_common::rng::hash3;
 use crate::app::{Phase, Tick};
 use crate::catalogue::Catalogue;
 use crate::tiles::{Donnees, TilesActives};
+use crate::zombies::Zombies;
 
 /// Hash de l'état, mis à jour à la fin de chaque tick.
 #[derive(Resource, Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,10 +37,16 @@ impl Plugin for DeterminismePlugin {
     }
 }
 
-fn hacher(tick: Res<Tick>, actives: Res<TilesActives>, mut hash: ResMut<StateHash>) {
+fn hacher(tick: Res<Tick>, actives: Res<TilesActives>, zombies: Query<&Zombies>, mut hash: ResMut<StateHash>) {
     let mut h = hash3(hash.0, tick.0, actives.0.len() as u64);
-    for t in actives.0.keys() {
+    for (t, &e) in &actives.0 {
         h = hash3(h, t.ix as u32 as u64, t.iy as u32 as u64);
+        let Ok(z) = zombies.get(e) else { continue };
+        h = hash3(h, z.liste.len() as u64, z.sans_place as u64);
+        for zombie in &z.liste {
+            let position = (zombie.local[0].to_bits() as u64) << 32 | zombie.local[1].to_bits() as u64;
+            h = hash3(h ^ position, zombie.id as u64, zombie.cap.to_bits() as u64);
+        }
     }
     hash.0 = h;
 }

@@ -130,10 +130,18 @@ pub struct TypeZombie {
 }
 
 /// Scénario compilé.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Scenario {
     /// Identifiant.
     pub id: String,
+    /// Graine du monde.
+    pub graine: u64,
+    /// Zombies par habitant, dans les zones peuplées.
+    pub densite_zombies: f32,
+    /// Type de zombie placé au départ.
+    pub type_zombie: IdZombie,
+    /// Zones peuplées de zombies (indices de `beta1_common::geo::ZONES`), triées.
+    pub zones_peuplees: Vec<u8>,
     /// Tiles actives au démarrage, triées, sans doublon.
     pub tiles_actives: Vec<TileId>,
 }
@@ -224,6 +232,11 @@ impl Catalogue {
         w.varint(self.scenarios.len() as u64);
         for s in &self.scenarios {
             w.string(&s.id);
+            w.u64(s.graine);
+            w.f32(s.densite_zombies);
+            w.u16(s.type_zombie.0);
+            w.bytes(&[s.zones_peuplees.len() as u8]);
+            w.bytes(&s.zones_peuplees);
             w.varint(s.tiles_actives.len() as u64);
             for t in &s.tiles_actives {
                 w.tile(*t);
@@ -336,7 +349,19 @@ pub fn charger(racine: &Path, liste: &[String]) -> Result<Catalogue, Erreurs> {
                     }
                 }
             },
-            Objet::Scenario(s) => scenarios.push(compiler_scenario(id, s)),
+            Objet::Scenario(_) => {}
+        }
+    }
+    // Les scénarios renvoient aux zombies : après eux.
+    for ((_, id), lu) in &objets {
+        if let Objet::Scenario(s) = &lu.objet {
+            let ids: Vec<&str> = zombies.iter().map(|z| z.id.as_str()).collect();
+            match ids.binary_search(&s.type_zombie.as_str()) {
+                Ok(i) => scenarios.push(compiler_scenario(id, s, IdZombie(i as u16))),
+                Err(_) => {
+                    erreurs.ajouter(&lu.chemin, format!("type_zombie « {} » : aucun zombie de ce nom", s.type_zombie))
+                }
+            }
         }
     }
     if zombies.len() > u16::MAX as usize {
@@ -442,7 +467,7 @@ fn compiler_zombie(id: &str, z: &objets::Zombie) -> Result<TypeZombie, Vec<Strin
     if e.is_empty() { Ok(t) } else { Err(e) }
 }
 
-fn compiler_scenario(id: &str, s: &objets::Scenario) -> Scenario {
+fn compiler_scenario(id: &str, s: &objets::Scenario, type_zombie: IdZombie) -> Scenario {
     let mut tiles = std::collections::BTreeSet::new();
     for r in &s.tiles_actives {
         for x in r.x[0]..=r.x[1] {
@@ -454,7 +479,17 @@ fn compiler_scenario(id: &str, s: &objets::Scenario) -> Scenario {
             }
         }
     }
-    Scenario { id: id.to_owned(), tiles_actives: tiles.into_iter().collect() }
+    let mut zones: Vec<u8> = s.zones_peuplees.iter().map(|z| z.indice()).collect();
+    zones.sort_unstable();
+    zones.dedup();
+    Scenario {
+        id: id.to_owned(),
+        graine: s.graine as u64,
+        densite_zombies: s.densite_zombies as f32,
+        type_zombie,
+        zones_peuplees: zones,
+        tiles_actives: tiles.into_iter().collect(),
+    }
 }
 
 /// JSON Schemas des fichiers de mods, versionnés dans `schema/` (E-02) : (nom du fichier, contenu).

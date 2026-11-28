@@ -1,5 +1,10 @@
 #:schema ../../../schema/objet.schema.json
 # Scénario de la partie officielle (G-06), choisi par --scenario.
 [scenario]
+graine = 2030
+# Un zombie par habitant en métropole (A-10) ; l'outre-mer est humain.
+densite_zombies = 1.0
+type_zombie = "ordinaire"
+zones_peuplees = ["LAMB93"]
 # En attendant les unités : Brest et ses abords (Lambert-93, km).
 tiles_actives = [{ zone = "LAMB93", x = [144, 147], y = [6837, 6840] }]
