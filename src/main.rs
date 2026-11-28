@@ -4,6 +4,7 @@ use std::net::TcpListener;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
+use std::time::Instant;
 
 use clap::Parser;
 
@@ -11,6 +12,7 @@ use beta1_server::app;
 use beta1_server::catalogue;
 use beta1_server::determinisme::StateHash;
 use beta1_server::reseau::{self, ReseauPlugin, Shared};
+use beta1_server::tiles::Publication;
 
 #[derive(Parser)]
 #[command(version, about = "Serveur de simulation de La Bataille de France (beta 1)")]
@@ -27,6 +29,12 @@ struct Args {
     /// Mods à charger, dans l'ordre déclaré (les dépendances passent avant).
     #[arg(long = "mod", value_name = "ID", value_delimiter = ',', default_value = "base")]
     liste: Vec<String>,
+    /// Publication de tiles (dossier qui contient COMPLET et MANIFESTE) ; sans elle, tout est mer.
+    #[arg(long, env = "TILES")]
+    tiles: Option<PathBuf>,
+    /// Scénario du catalogue à jouer.
+    #[arg(long, default_value = "officiel")]
+    scenario: String,
     /// Valide le catalogue et l'ordre des systèmes (ambiguïtés), puis sort.
     #[arg(long)]
     check: bool,
@@ -58,22 +66,46 @@ fn lancer(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     }
     let catalogue = catalogue::charger(&args.mods, &args.liste)?;
     let hash = blake3::Hash::from(catalogue.hash());
+    let publication = match &args.tiles {
+        Some(d) => {
+            let debut = Instant::now();
+            let p = Publication::ouvrir(d, args.threads)?;
+            eprintln!(
+                "tiles {} : {} départements, {} paquets, {} tiles, index en {:.1} s",
+                p.id,
+                p.departements.len(),
+                p.nb_paquets(),
+                p.len(),
+                debut.elapsed().as_secs_f32()
+            );
+            Some(Arc::new(p))
+        }
+        None => {
+            eprintln!("aucune publication de tiles (--tiles ou TILES) : tout est mer");
+            None
+        }
+    };
+    let monde = app::Monde::new(catalogue, publication, &args.scenario)?;
+    let initiales = monde.tiles_initiales.len();
     if args.check {
-        let mut app = app::app(catalogue, args.threads, false);
+        let mut app = app::app(monde, args.threads, false);
         app::verifier(&mut app)?;
-        println!("catalogue {hash} : valide ; ordre des systèmes : sans ambiguïté");
+        println!(
+            "catalogue {hash} : valide ; scénario « {} » ({initiales} tiles) ; ordre des systèmes : sans ambiguïté",
+            args.scenario
+        );
         return Ok(());
     }
     if let Some(n) = args.determinism {
-        let mut app = app::app(catalogue, args.threads, false);
+        let mut app = app::app(monde, args.threads, false);
         app::avancer_de(&mut app, n);
         println!("{:016x}", app.world().resource::<StateHash>().0);
         return Ok(());
     }
-    eprintln!("catalogue {hash}");
+    eprintln!("catalogue {hash} ; scénario « {} » : {initiales} tiles actives au démarrage", args.scenario);
     let shared = Arc::new(Shared::default());
     reseau::listen(TcpListener::bind(&args.listen)?, shared.clone());
-    let mut app = app::app(catalogue, args.threads, true);
+    let mut app = app::app(monde, args.threads, true);
     app.add_plugins(ReseauPlugin(shared));
     app::verifier(&mut app)?;
     app.run();

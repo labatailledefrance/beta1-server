@@ -1,0 +1,5 @@
+#:schema ../../../schema/objet.schema.json
+# Scénario de la partie officielle (G-06), choisi par --scenario.
+[scenario]
+# En attendant les unités : Brest et ses abords (Lambert-93, km).
+tiles_actives = [{ zone = "LAMB93", x = [144, 147], y = [6837, 6840] }]

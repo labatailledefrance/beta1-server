@@ -77,5 +77,6 @@ fn hash_d_etat_part_du_catalogue() {
     let c = base();
     let mut a = app::app(c.clone(), 1, false);
     app::avancer_de(&mut a, 0);
-    assert_eq!(a.world().resource::<StateHash>().0, c.hash_court());
+    // Sans publication de tiles : graine = hash3(catalogue, 0, 0).
+    assert_eq!(a.world().resource::<StateHash>().0, beta1_common::rng::hash3(c.hash_court(), 0, 0));
 }

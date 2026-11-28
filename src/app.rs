@@ -13,16 +13,19 @@
 //!              → Logistique → Nettoyage → Sortie
 //! ```
 
+use std::sync::Arc;
 use std::time::Duration;
 
 use bevy::app::ScheduleRunnerPlugin;
 use bevy::ecs::schedule::{LogLevel, ScheduleBuildSettings, ScheduleLabel};
 use bevy::prelude::*;
 
+use beta1_common::geo::TileId;
 use beta1_common::protocol::TICKS_PER_SECOND;
 
 use crate::catalogue::{Catalogue, CataloguePlugin};
 use crate::determinisme::DeterminismePlugin;
+use crate::tiles::{Publication, TilesPlugin};
 
 /// Phases d'un tick, dans l'ordre.
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -63,10 +66,40 @@ fn ambiguite_en_erreur(app: &mut App, label: impl ScheduleLabel) {
     });
 }
 
-/// `App` de simulation, avec le catalogue déjà chargé. `paced` : boucle à 20 Hz
-/// réels (sinon les ticks s'enchaînent sans attente, pour les tests et le
+/// Ce qui définit un monde au démarrage : catalogue, tiles, scénario.
+pub struct Monde {
+    /// Catalogue chargé et validé.
+    pub catalogue: Catalogue,
+    /// Publication de tiles ; `None` : tout est mer (tests, CI).
+    pub publication: Option<Arc<Publication>>,
+    /// Tiles actives au démarrage.
+    pub tiles_initiales: Vec<TileId>,
+}
+
+impl Monde {
+    /// Monde du scénario `scenario` du catalogue.
+    pub fn new(catalogue: Catalogue, publication: Option<Arc<Publication>>, scenario: &str) -> Result<Monde, String> {
+        let s = catalogue.scenario(scenario).ok_or_else(|| {
+            let ids: Vec<&str> = catalogue.scenarios.iter().map(|s| s.id.as_str()).collect();
+            format!("scénario « {scenario} » absent du catalogue (scénarios : {})", ids.join(", "))
+        })?;
+        let tiles_initiales = s.tiles_actives.clone();
+        Ok(Monde { catalogue, publication, tiles_initiales })
+    }
+}
+
+/// Monde sans données ni tile active : celui des tests d'un plugin seul.
+impl From<Catalogue> for Monde {
+    fn from(catalogue: Catalogue) -> Monde {
+        Monde { catalogue, publication: None, tiles_initiales: Vec::new() }
+    }
+}
+
+/// `App` de simulation, catalogue chargé. `paced` : boucle à 20 Hz réels
+/// (sinon les ticks s'enchaînent sans attente, pour les tests et le
 /// déterminisme).
-pub fn app(catalogue: Catalogue, threads: usize, paced: bool) -> App {
+pub fn app(monde: impl Into<Monde>, threads: usize, paced: bool) -> App {
+    let monde = monde.into();
     let mut app = App::new();
     let wait = if paced { tick_duration() } else { Duration::ZERO };
     app.add_plugins(
@@ -86,7 +119,11 @@ pub fn app(catalogue: Catalogue, threads: usize, paced: bool) -> App {
         (Entrees, Tiles, Perception, Decision, Mouvement, Combat, Logistique, Nettoyage, Sortie).chain(),
     );
     app.init_resource::<Tick>().add_systems(FixedFirst, avancer);
-    app.add_plugins((CataloguePlugin(catalogue), DeterminismePlugin));
+    app.add_plugins((
+        CataloguePlugin(monde.catalogue),
+        TilesPlugin { publication: monde.publication, scenario: monde.tiles_initiales },
+        DeterminismePlugin,
+    ));
     app
 }
 
