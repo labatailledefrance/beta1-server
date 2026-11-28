@@ -239,3 +239,42 @@ fn toutes_les_erreurs_d_un_coup() {
     // a : borne + texte absent ; b : champ inconnu.
     assert_eq!(e.len(), 3, "{e}");
 }
+
+const SCENARIO: &str = "[scenario]
+graine = 1
+densite_zombies = 1.0
+type_zombie = \"ordinaire\"
+zones_peuplees = [\"LAMB93\"]
+tiles_actives = [{ zone = \"LAMB93\", x = [1, 2], y = [3, 4] }]
+";
+
+#[test]
+fn scenario_compile() {
+    let d = dossier();
+    mod_valide(&d, "base", &[]);
+    ecrire(&d, "base/scenarios/essai.toml", SCENARIO);
+    ecrire(&d, "base/locales/fr/base.ftl", "zombie-ordinaire = Zombie\nscenario-essai = Essai\n");
+    let c = charger(&d, &["base"]).unwrap();
+    let s = c.scenario("essai").unwrap();
+    assert_eq!(s.tiles_actives.len(), 4);
+    assert_eq!(s.type_zombie, c.id_zombie("ordinaire").unwrap());
+    assert_eq!(s.zones_peuplees, [0]);
+}
+
+#[test]
+fn scenario_type_de_zombie_inconnu() {
+    let d = dossier();
+    mod_valide(&d, "base", &[]);
+    ecrire(&d, "base/scenarios/essai.toml", &SCENARIO.replace("\"ordinaire\"", "\"coureur\""));
+    ecrire(&d, "base/locales/fr/base.ftl", "zombie-ordinaire = Zombie\nscenario-essai = Essai\n");
+    refuse(&d, &["base"], "type_zombie « coureur » : aucun zombie de ce nom");
+}
+
+#[test]
+fn scenario_zone_inconnue() {
+    let d = dossier();
+    mod_valide(&d, "base", &[]);
+    ecrire(&d, "base/scenarios/essai.toml", &SCENARIO.replace("[\"LAMB93\"]", "[\"MARS\"]"));
+    ecrire(&d, "base/locales/fr/base.ftl", "zombie-ordinaire = Zombie\nscenario-essai = Essai\n");
+    refuse(&d, &["base"], "MARS");
+}

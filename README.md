@@ -25,6 +25,7 @@ src/
   app.rs           l'App, les phases et leur ordre : le seul endroit où lire le flux d'un tick
   catalogue/       mods, objets TOML, textes Fluent : validation et compilation
   tiles/           publication, terrain, activation à tick fixé
+  zombies/         peuplement des tiles actives, errance, passages de tile
   determinisme.rs  hash d'état
   reseau.rs        WebSocket, handshake, send queue
 mods/base/         le contenu de base, un mod comme les autres
@@ -53,7 +54,7 @@ mods/<id>/locales/fr/*.ftl        textes (Fluent), clé « <genre>-<identifiant>
 - **Pas de rechargement à chaud** : un catalogue changé, c'est un redémarrage, donc un monde remis à zéro.
 - **Éditeur** : les fichiers commencent par `#:schema …/schema/objet.schema.json` (Taplo, Even Better TOML) pour l'autocomplétion et les bornes. Après un changement des types, `--schema schema` ; un test vérifie que `schema/` est à jour.
 
-Genres d'objets : `zombie` (déplacement, perception, alerte, contagion ; valeurs de départ de P-26), `scenario` (état initial ; pour l'instant, les tiles actives au démarrage).
+Genres d'objets : `zombie` (déplacement, perception, alerte, contagion ; valeurs de départ de P-26), `scenario` (état initial : graine, zombies par habitant, type de zombie placé, zones peuplées, tiles actives au démarrage). Une référence vers un autre objet (`type_zombie`) est vérifiée au chargement.
 
 ### Tiles
 
@@ -61,6 +62,14 @@ Genres d'objets : `zombie` (déplacement, perception, alerte, contagion ; valeur
 - **Terrain** : grille de passage de 500 × 500 cases de 2 m (piéton, zombie, bâti, eau ; règles de P-26), occupation du sol, part de bâti. L'empreinte BLAKE3 de la tile est vérifiée. Une tile hors des données est de la mer. L'estran reste à terre tant que les marées ne sont pas simulées (A-11).
 - **Activation** : message `ActiverTile` ; lecture et décodage en tâche de fond (`IoTaskPool`), mise en service au tick `demande + DELAI_ACTIVATION` (10 ticks), que le tick attend au besoin. Une tile illisible arrête le serveur plutôt que de simuler un autre monde que celui des données. Les tiles actives sont des entités `TileActive`, rangées par `TileId` dans `TilesActives`.
 - Le hash d'état part du hash du catalogue et de l'identifiant de la publication, et couvre les tiles actives.
+
+### Zombies
+
+- Les zombies d'une tile active sont un composant `Zombies` de l'entité de la tile : une liste et une grille d'occupation (3 zombies au plus par case de 2 m), comme dans P-26. Une entité par zombie coûterait plus cher pour rien.
+- **Peuplement** à la mise en service d'une tile : habitants × `densite_zombies` du scénario, dans les zones peuplées (la métropole ; l'outre-mer est humain, A-10). Placement par hachage (graine, tile, rang, essai), de préférence à 12 m du bâti, toujours sur une case de terre ouverte aux piétons. Identifiants attribués dans l'ordre des tiles.
+- **Errance**, en phase Mouvement : décision en parallèle par tile (chaque zombie ne lit que sa tile), application dans l'ordre des tiles puis des zombies, glissement le long des obstacles, passages vers une tile active après tous les déplacements ; une tile inactive fait bord.
+- Brest (16 tiles, profil `rapide`) : 48 761 zombies, 1,9 ms par tick, hash compris.
+- À venir avec les humains : perception, relais de l'alerte, champs de poursuite, contacts.
 
 ## Règles
 

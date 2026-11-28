@@ -2,92 +2,24 @@
 //! les encodeurs de beta1-common ; plus un essai sur les vraies tiles de Brest,
 //! quand elles sont là (`data/generated/essai-ci/sortie`).
 
-use std::path::{Path, PathBuf};
+mod commun;
+
+use std::path::Path;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU32, Ordering};
 
 use bevy::prelude::*;
-use ruzstd::encoding::{CompressionLevel, compress_to_vec};
 
 use beta1_common::geo::TileId;
-use beta1_common::tile::codes::{OCC_SEA, OCC_WATER};
-use beta1_common::tile::sections::{BITMAP_LEN, CELLS, GRID};
-use beta1_common::tile::{self, Header, Section, SectionId};
-use beta1_server::app::{self, Monde};
-use beta1_server::catalogue;
+use beta1_common::tile::sections::GRID;
+use beta1_server::app;
 use beta1_server::determinisme::StateHash;
 use beta1_server::tiles::terrain::{P_BATI, P_EAU, P_PIETON, P_ZOMBIE};
 use beta1_server::tiles::{DELAI_ACTIVATION, Publication, Terrain, TileActive, TilesActives};
-
-fn dossier() -> PathBuf {
-    static N: AtomicU32 = AtomicU32::new(0);
-    let d = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!(
-        "tiles-{}-{}",
-        std::process::id(),
-        N.fetch_add(1, Ordering::Relaxed)
-    ));
-    let _ = std::fs::remove_dir_all(&d);
-    std::fs::create_dir_all(&d).unwrap();
-    d
-}
-
-fn section(id: SectionId, brut: &[u8]) -> Section {
-    Section { id, raw_len: brut.len(), data: compress_to_vec(brut, CompressionLevel::Fastest) }
-}
-
-/// Tile d'essai : bâti à l'ouest (i < 100), rivière sur la ligne j = 250, mer au sud (j = 0).
-fn tile_essai(t: TileId) -> Vec<u8> {
-    let mut franchissable = vec![0u64; BITMAP_LEN / 8];
-    let mut occupation = vec![0u8; CELLS];
-    for j in 0..GRID {
-        for i in 0..GRID {
-            let k = j * GRID + i;
-            if i >= 100 {
-                franchissable[k >> 6] |= 1 << (k & 63);
-            }
-            if j == 250 {
-                occupation[k] = OCC_WATER;
-            }
-            if j == 0 {
-                occupation[k] = OCC_SEA;
-            }
-        }
-    }
-    let bits: Vec<u8> = franchissable.iter().flat_map(|w| w.to_le_bytes()).collect();
-    let h = Header {
-        zone: t.zone(),
-        ix: t.zone_ix(),
-        iy: t.iy,
-        flags: 3,
-        built_share: 13_107,
-        inhabitants: 42,
-        buildings: 1,
-    };
-    tile::encode(&h, &[section(SectionId::Passable, &bits), section(SectionId::Occupation, &occupation)])
-}
-
-/// Publication d'un département `D029`, un paquet par groupe de tiles.
-fn publication(racine: &Path, paquets: &[&[TileId]]) {
-    std::fs::write(racine.join("MANIFESTE"), "publication abcd\nversion 0.1.0\nD029 00\ngraphe 00\n").unwrap();
-    let d = racine.join("departements/D029/paquets");
-    std::fs::create_dir_all(&d).unwrap();
-    for (k, ts) in paquets.iter().enumerate() {
-        let tiles: Vec<(TileId, Vec<u8>)> = ts.iter().map(|t| (*t, tile_essai(*t))).collect();
-        let v: Vec<(i32, i32, &[u8])> = tiles.iter().map(|(t, b)| (t.ix, t.iy, b.as_slice())).collect();
-        std::fs::write(d.join(format!("bloc_{k}.p07")), tile::encode_pack(&v)).unwrap();
-    }
-    std::fs::write(racine.join("COMPLET"), "").unwrap();
-}
+use commun::{dossier, monde, ouvrir, publication, tile_essai};
 
 const A: TileId = TileId { ix: 145, iy: 6838 };
 const B: TileId = TileId { ix: 146, iy: 6838 };
 const MER: TileId = TileId { ix: 10, iy: 6000 };
-
-fn ouvrir(paquets: &[&[TileId]]) -> Arc<Publication> {
-    let d = dossier();
-    publication(&d, paquets);
-    Arc::new(Publication::ouvrir(&d, 4).unwrap())
-}
 
 #[test]
 fn index_de_la_publication() {
@@ -141,11 +73,6 @@ fn terrain_refuse_une_tile_corrompue_ou_deplacee() {
     b[n / 2] ^= 1;
     assert!(Terrain::decoder(A, &b).unwrap_err().contains("empreinte"));
     assert!(Terrain::decoder(B, &tile_essai(A)).unwrap_err().contains("en-tête"));
-}
-
-fn monde(publication: Option<Arc<Publication>>, tiles: Vec<TileId>) -> Monde {
-    let c = catalogue::charger(&Path::new(env!("CARGO_MANIFEST_DIR")).join("mods"), &["base".to_owned()]).unwrap();
-    Monde { catalogue: c, publication, tiles_initiales: tiles }
 }
 
 fn actives(a: &App) -> Vec<TileId> {

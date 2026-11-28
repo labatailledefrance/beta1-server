@@ -30,6 +30,10 @@ pub use terrain::Terrain;
 /// Ticks entre la demande d'activation et la mise en service (0,5 s à 20 Hz).
 pub const DELAI_ACTIVATION: u64 = 10;
 
+/// Mise en service des tiles : un plugin qui réagit à une nouvelle tile active se range après.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct MiseEnService;
+
 /// Demande d'activation d'une tile.
 #[derive(Message, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ActiverTile(pub TileId);
@@ -82,7 +86,7 @@ impl Plugin for TilesPlugin {
             .init_resource::<TilesActives>()
             .init_resource::<Chargements>()
             .add_systems(FixedUpdate, demander_le_scenario.in_set(Phase::Entrees).run_if(premier_tick))
-            .add_systems(FixedUpdate, (lancer, mettre_en_service).chain().in_set(Phase::Tiles));
+            .add_systems(FixedUpdate, (lancer, mettre_en_service.in_set(MiseEnService)).chain().in_set(Phase::Tiles));
     }
 }
 

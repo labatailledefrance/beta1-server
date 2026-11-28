@@ -71,16 +71,44 @@
       "description": "Scénario : ce qui existe au démarrage du monde.",
       "type": "object",
       "properties": {
+        "densite_zombies": {
+          "description": "Zombies par habitant de 2030 dans les zones peuplées (A-10 : métropole zombifiée).",
+          "type": "number",
+          "format": "double",
+          "maximum": 10.0,
+          "minimum": 0.0
+        },
+        "graine": {
+          "description": "Graine du monde : placement des zombies, hasard de la simulation.",
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0
+        },
         "tiles_actives": {
           "description": "Tiles actives au démarrage, en attendant que les unités les activent.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/Rectangle"
           }
+        },
+        "type_zombie": {
+          "description": "Type de zombie placé au départ (identifiant d'un objet `zombie`).",
+          "type": "string"
+        },
+        "zones_peuplees": {
+          "description": "Zones de projection où l'on place des zombies (l'outre-mer est humain, A-10).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ZoneProjection"
+          }
         }
       },
       "additionalProperties": false,
       "required": [
+        "graine",
+        "densite_zombies",
+        "type_zombie",
+        "zones_peuplees",
         "tiles_actives"
       ]
     },

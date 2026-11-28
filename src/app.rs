@@ -20,12 +20,12 @@ use bevy::app::ScheduleRunnerPlugin;
 use bevy::ecs::schedule::{LogLevel, ScheduleBuildSettings, ScheduleLabel};
 use bevy::prelude::*;
 
-use beta1_common::geo::TileId;
 use beta1_common::protocol::TICKS_PER_SECOND;
 
-use crate::catalogue::{Catalogue, CataloguePlugin};
+use crate::catalogue::{Catalogue, CataloguePlugin, Scenario};
 use crate::determinisme::DeterminismePlugin;
 use crate::tiles::{Publication, TilesPlugin};
+use crate::zombies::ZombiesPlugin;
 
 /// Phases d'un tick, dans l'ordre.
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -72,9 +72,13 @@ pub struct Monde {
     pub catalogue: Catalogue,
     /// Publication de tiles ; `None` : tout est mer (tests, CI).
     pub publication: Option<Arc<Publication>>,
-    /// Tiles actives au démarrage.
-    pub tiles_initiales: Vec<TileId>,
+    /// Scénario joué ; `None` : rien au départ (tests d'un plugin seul).
+    pub scenario: Option<Scenario>,
 }
+
+/// Scénario joué, en lecture seule pendant la partie.
+#[derive(Resource, Debug, Clone, Default)]
+pub struct ScenarioEnCours(pub Option<Scenario>);
 
 impl Monde {
     /// Monde du scénario `scenario` du catalogue.
@@ -83,15 +87,15 @@ impl Monde {
             let ids: Vec<&str> = catalogue.scenarios.iter().map(|s| s.id.as_str()).collect();
             format!("scénario « {scenario} » absent du catalogue (scénarios : {})", ids.join(", "))
         })?;
-        let tiles_initiales = s.tiles_actives.clone();
-        Ok(Monde { catalogue, publication, tiles_initiales })
+        let scenario = Some(s.clone());
+        Ok(Monde { catalogue, publication, scenario })
     }
 }
 
 /// Monde sans données ni tile active : celui des tests d'un plugin seul.
 impl From<Catalogue> for Monde {
     fn from(catalogue: Catalogue) -> Monde {
-        Monde { catalogue, publication: None, tiles_initiales: Vec::new() }
+        Monde { catalogue, publication: None, scenario: None }
     }
 }
 
@@ -119,9 +123,12 @@ pub fn app(monde: impl Into<Monde>, threads: usize, paced: bool) -> App {
         (Entrees, Tiles, Perception, Decision, Mouvement, Combat, Logistique, Nettoyage, Sortie).chain(),
     );
     app.init_resource::<Tick>().add_systems(FixedFirst, avancer);
+    let tiles_initiales = monde.scenario.as_ref().map(|s| s.tiles_actives.clone()).unwrap_or_default();
+    app.insert_resource(ScenarioEnCours(monde.scenario));
     app.add_plugins((
         CataloguePlugin(monde.catalogue),
-        TilesPlugin { publication: monde.publication, scenario: monde.tiles_initiales },
+        TilesPlugin { publication: monde.publication, scenario: tiles_initiales },
+        ZombiesPlugin,
         DeterminismePlugin,
     ));
     app

@@ -165,12 +165,26 @@ pub const MAX_TILES_ACTIVES: i64 = 10_000;
 #[derive(Deserialize, JsonSchema, Debug, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Scenario {
+    /// Graine du monde : placement des zombies, hasard de la simulation.
+    #[schemars(range(min = 0))]
+    pub graine: i64,
+    /// Zombies par habitant de 2030 dans les zones peuplées (A-10 : métropole zombifiée).
+    #[schemars(range(min = 0.0, max = 10.0))]
+    pub densite_zombies: f64,
+    /// Type de zombie placé au départ (identifiant d'un objet `zombie`).
+    pub type_zombie: String,
+    /// Zones de projection où l'on place des zombies (l'outre-mer est humain, A-10).
+    pub zones_peuplees: Vec<ZoneProjection>,
     /// Tiles actives au démarrage, en attendant que les unités les activent.
     pub tiles_actives: Vec<Rectangle>,
 }
 
 impl Scenario {
     fn verifier(&self, erreurs: &mut Vec<String>) {
+        if self.graine < 0 {
+            erreurs.push(format!("graine = {} négative", self.graine));
+        }
+        borne("densite_zombies", self.densite_zombies, 0.0, 10.0, erreurs);
         let mut total = 0i64;
         for (k, r) in self.tiles_actives.iter().enumerate() {
             let cote = beta1_common::geo::ZONE_STRIDE;

@@ -86,7 +86,7 @@ fn lancer(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         }
     };
     let monde = app::Monde::new(catalogue, publication, &args.scenario)?;
-    let initiales = monde.tiles_initiales.len();
+    let initiales = monde.scenario.as_ref().map_or(0, |s| s.tiles_actives.len());
     if args.check {
         let mut app = app::app(monde, args.threads, false);
         app::verifier(&mut app)?;
